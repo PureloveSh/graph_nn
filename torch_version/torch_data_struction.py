@@ -23,8 +23,10 @@ class PartConnection:
 
 
 class FullConnnection:
-    def __init__(self):
-        pass
+    def __init__(self, upstream_node, downstream_node):
+        self.upstream_node = upstream_node
+        self.downstream_node = downstream_node
+
 
     def late_init(self, up_num, down_num):
         pass
