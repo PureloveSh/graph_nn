@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 
 class Dataset:
     def __init__(self, type:str, batch_size:int):
-        path = os.path.join('./UCI_data/txt', type+'.txt')
+        path = os.path.join('../UCI_data/txt', type+'.txt')
         data = pd.read_csv(path).values
         X, y = data[:, 1:], data[:, 0]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
