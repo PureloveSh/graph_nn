@@ -4,47 +4,94 @@ import numpy as np
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import torch_datasets
-import torch_activators
 import torch_loss
 import torch_optim
+import executor
+import copy
 
-class MyModel(torch.nn.Module):
-    def __init__(self):
-        super(MyModel, self).__init__()
-        self.part_linear = PartLinear(1, 10, 0.5)
-        self.linear = torch.nn.Linear(10, 1)
-
-    def forward(self, input):
-        x = self.part_linear(input)
-        x = F.relu(x)
-        x = self.linear(x)
-
-        #for node in node_list:
-
-
-        return x
 
 class Network:
-    def __init__(self, dataset, batch_size, learning_rate, epochs, loss, optimizer):
+    def __init__(self, v, e, dataset, batch_size, learning_rate, epochs, loss, optimizer):
+        self.node_collection = v
+        self.topo_node_list = executor.Executor(copy.copy(self.node_collection.node_list()), e).topoSort()
         self.train_loader, self.test_loader = torch_datasets.Dataset(dataset, batch_size).get_dataset()
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.criterion = torch_loss.Loss(loss).loss
         self.optimizer = torch_optim.Optimizer(optimizer).optimizer
-        train_size = len(self.train_loader)
-        print(self.criterion, self.optimizer)
+        self.model = self.build_model()
+
+    def get_input_node(self):
+        node = [node for node in self.topo_node_list if not node.downstream]
+        return node
+
+    def get_output_node(self):
+        node = [node for node in self.topo_node_list if not node.upstream]
+        return node
+
+    def get_not_input_node(self):
+        node = [node for node in self.topo_node_list if node.downstream]
+        return node
+
+    def set_input(self, input):
+        self.get_input_node().set_output(input)
+
+    def build_model(self):
+        model = torch.nn.Sequential()
+        for index, node in enumerate(self.get_not_input_node(), 1):
+            linear = node.downstream.linear
+            activation_func = node.activation_func
+            model.add_module('linear'+index, linear)
+            if activation_func is not None:
+                model.add_module('activation'+index, activation_func)
+        return model
+
+    def save_model(self):
+        torch.save(self.model.static_dict(), 'params.ckpt')
+
+    def load_model(self):
+        self.model.load_state_dict(torch.load('params.ckpt'))
+
+    def train(self):
+        optimizer = self.optimizer(self.model.parameters(), lr=self.learning_rate)
+        total_step = len(self.train_loader)
+        for epoch in range(1, self.epochs+1):
+            for index, (data, label) in enumerate(self.train_loader, 1):
+                output = self.model(data)
+                loss = self.criterion(output, label)
+                print('Epoch [{}/{}] Step [{}/{}] Loss:{:.4f}'.format(epoch, self.epochs, index, total_step, loss.item()))
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+    def test(self):
+        with torch.no_grad():
+            correct = 0
+            total = 0
+            for data, label in self.test_loader:
+                output = self.model(data)
+                # torch.max的返回值第一个值是值，第二个是下标
+                _, predicted = torch.max(output.data, 1)
+                total += label.size(0)
+                correct += (predicted == label).sum().item()
+            print('Accuracy on test data is {:.4f}%'.format(100*correct/total))
 
 
-Network('Iris', 32, 0.01, 1000, 'MSE', 'Adam')
+
+    def start(self):
+        self.train()
+        self.test()
+
+
+
+
+#Network('Iris', 32, 0.01, 1000, 'MSE', 'Adam')
 
 #'''
 x_train = np.array([[3.3], [4.4], [5.5], [6.71], [6.93], [4.168],
                     [9.779], [6.182], [7.59], [2.167], [7.042],
                     [10.791], [5.313], [7.997], [3.1]], dtype=np.float32)
 
-inputs = torch.from_numpy(x_train)
-y = F.sigmoid(inputs)
-print(y)
 
 '''
 y_train = np.array([[1.7], [2.76], [2.09], [3.19], [1.694], [1.573],

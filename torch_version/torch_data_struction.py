@@ -52,13 +52,20 @@ class PartLinear(torch.nn.Module):
 
 class Node:
     def __init__(self, activation_func):
-        self.op = 0.0
-        self.upstream = []
-        self.downstream = []
+        self.output = 0.0
+        self.upstream = None
+        self.downstream = None
         self.activation_func = torch_activators.Activator(activation_func).get_activator()
 
     def activate_output(self):
-        self.op = self.activation_func(self.op)
+        self.output = self.activation_func(self.output)
+
+    def set_output(self, output):
+        self.output = output
+
+    def cal_output(self):
+        if self.downstream:
+            self.output = self.downstream.linear(self.downstream.downstream_node.output)
 
 
 class PartConnection:

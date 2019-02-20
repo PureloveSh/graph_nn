@@ -19,13 +19,14 @@ class Dataset:
         self.test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
 
     def get_dataset(self):
-        '''
+
         for data, label in self.train_loader:
-            print(data, label)
-        '''
+            print(label.size(0))
+        for _ , label in self.train_loader:
+            print(label)
         return self.train_loader, self.test_loader
 
 
 
 
-print(Dataset("Iris", 64).get_dataset())
+print(Dataset("Iris", 16).get_dataset())
