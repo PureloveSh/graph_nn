@@ -22,16 +22,16 @@ class Network:
         self.model = self.build_model()
 
     def get_input_node(self):
-        node = [node for node in self.topo_node_list if not node.downstream]
-        return node
+        nodes = [node for node in self.topo_node_list if not node.downstream]
+        return nodes
 
     def get_output_node(self):
-        node = [node for node in self.topo_node_list if not node.upstream]
-        return node
+        nodes = [node for node in self.topo_node_list if not node.upstream]
+        return nodes
 
     def get_not_input_node(self):
-        node = [node for node in self.topo_node_list if node.downstream]
-        return node
+        nodes = [node for node in self.topo_node_list if node.downstream]
+        return nodes
 
     def set_input(self, input):
         self.get_input_node().set_output(input)
@@ -75,6 +75,11 @@ class Network:
                 total += label.size(0)
                 correct += (predicted == label).sum().item()
             print('Accuracy on test data is {:.4f}%'.format(100*correct/total))
+
+
+
+
+
 
 
 
