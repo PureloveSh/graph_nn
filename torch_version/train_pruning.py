@@ -10,7 +10,7 @@ params = {
     'num_epochs':5,
     'learning_rate':1e-3,
     'weight_decay':5e-4,
-    'pruning_perc':15.
+    'pruning_perc':30.
 }
 
 
@@ -88,6 +88,7 @@ def weight_prune(model, pruning_perc):
     all_weights = []
     for p in model.parameters():
         if len(p.data.size()) != 1:
+            # 列表的+=相当于extend
             all_weights += list(p.data.abs().numpy().flatten())
 
     threshold = np.percentile(np.array(all_weights), pruning_perc)
@@ -107,6 +108,10 @@ test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=params['batch
 
 
 net = MLP()
+
+
+for p in net.parameters():
+    print(len(p.data.size()))
 
 print('--------Pretrained network loader---------')
 masks = weight_prune(net, params['pruning_perc'])
